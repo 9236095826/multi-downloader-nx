@@ -294,12 +294,32 @@ class Merger {
         }
         args.push('--track-name', `0:"${(subObj.language.language || subObj.language.name) + `${subObj.closedCaption === true ? ` ${this.options.ccTag}` : ''}` + `${subObj.signs === true ? ' Signs' : ''}`}"`);
         args.push('--language', `0:"${subObj.language.code}"`);
-        //TODO: look into making Closed Caption default if it's the only sub of the default language downloaded
-        if (this.options.defaults.sub.code === subObj.language.code && !subObj.closedCaption) {
+        
+        let isDefault = false;
+        const isDefaultAudioEnglish = this.options.defaults.audio.code === 'eng';
+
+        // Apply new logic for English subtitles
+        if (subObj.language.code === 'eng') {
+          if (isDefaultAudioEnglish && subObj.signs === true) {
+            // Default audio is English, so make "Signs" the default sub
+            isDefault = true;
+          } else if (!isDefaultAudioEnglish && !subObj.signs) {
+            // Default audio is not English, so make the main English sub the default
+            isDefault = true;
+          }
+        } else {
+          // Fallback to original logic for all other languages
+          if (this.options.defaults.sub.code === subObj.language.code && !subObj.closedCaption) {
+            isDefault = true;
+          }
+        }
+
+        if (isDefault) {
           args.push('--default-track 0');
         } else {
           args.push('--default-track 0:0');
         }
+        
         args.push(`"${subObj.file}"`);
       }
     } else {
